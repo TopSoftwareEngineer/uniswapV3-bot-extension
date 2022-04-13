@@ -1,28 +1,90 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable import/no-anonymous-default-export */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { CurrencyAmount, Percent, Token, TradeType } from "@uniswap/sdk-core";
 import { AlphaRouter } from '@uniswap/smart-order-router'
 import { BigNumber, ethers } from "ethers";
+import React from 'react';
 // require("dotenv").config();
 
 export default () => {
-	const minGas = 0.0001
+
 	const chianId = 1
 	const provider = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161');
-	const wallet = new ethers.Wallet('a5406b9513539b6752a5e549ae6b54c83e58f05037fb93d61b353183c460df94',provider);
 	const router = new AlphaRouter({ chainId: chianId, provider: provider });
-	console.log(wallet.address)
 
-	const [url, setUrl] = useState<string|undefined>('');
+	const [privateKey, setPrivateKey] = useState<string|null>(localStorage.getItem('privateKey') ? localStorage.getItem('privateKey') : '');
+	const [minGas, setMinGas] = useState<number>(localStorage.getItem('minGas')? Number(localStorage.getItem('minGas')) : 0.0001);
+	let timeOut : any = null;let wallet : any = null;
 
 	useEffect(() => {  
-		
+		console.log('privateKey',privateKey)
+		console.log('minGas',minGas)
+		const temp = document.getElementById('wallet-address')
+		if(privateKey && privateKey.length === 64 ){
+			wallet = new ethers.Wallet(privateKey,provider);
+			if(temp) {
+				temp.innerHTML = wallet.address;
+			}
+		}
+		else{
+			if(temp) {
+				temp.innerHTML = '0x0000000000000000000000000000000000000000';
+			}
+		}
 	}, []);
 
+	const run = () => {
+		timeOut = setTimeout(async function()
+		{
+			console.log(timeOut)
+			const balance = await balanceOf()
+			console.log("balance -> ",balance)
+			if (balance!==null && balance>=minGas) {
+				await swap(balance)
+				if(timeOut){
+					run()
+				}
+			}
+		}, 3000);
+	};
+
 	const onStart = () => {
-		run()
+		if(privateKey){
+			try{
+				const element = document.getElementById('start-stop')
+				if(timeOut){
+					console.log('clear timer ',timeOut)
+					clearTimeout(timeOut);
+					timeOut = null;
+					if(element){
+						element.innerHTML = 'START' 
+					}
+				}else{
+					if(element){
+						element.innerHTML = 'STOP' 
+					}
+					console.log('run timer',timeOut)
+					run();
+				}
+			}
+			catch(error){
+				console.log(error)
+				alert('Input correct wallet address')
+			}
+		}
+		else{
+			alert('Input wallet address')
+		}
+	}
+
+	const onSave = () => {
+		console.log('onSave->',privateKey + " " + minGas)
+		localStorage.setItem('privateKey', privateKey ? privateKey : '');
+		localStorage.setItem('minGas', minGas.toString());
+		// setPrivateKey('')
 	}
 
 	const balanceOf = async () => {
@@ -36,7 +98,7 @@ export default () => {
 		return null
 	}
 
-	const swap = async () => {
+	const swap = async (balance : number) => {
 		try {
 			console.log('swap called')
 			const WETH = new Token(
@@ -56,7 +118,7 @@ export default () => {
 				"USDT",
 				"USD Coin"
 			);
-			const swapAmount = ethers.utils.parseEther("0.001")
+			const swapAmount = ethers.utils.parseEther(balance.toString())
 			const route = await router.route(CurrencyAmount.fromRawAmount(WETH, swapAmount.toHexString()), USDT, TradeType.EXACT_INPUT, {
 				recipient: wallet.address,
 				slippageTolerance: new Percent(5, 100),
@@ -73,32 +135,61 @@ export default () => {
 					from: wallet.address,
 					gasPrice: BigNumber.from(route.gasPriceWei),
 				};
+
+				console.log('transaction param -> ',transaction);
 			
 				const tx = await wallet.sendTransaction(transaction); 
-				console.dir(tx);
+				console.dir('tx -> ',tx);
 				alert("Send finished!");
 			}
 			else{
 				console.log('route is null');
 			}
 		} catch (error) {
-			console.error('swap exception ->',error)
+			console.log('swap exception -> ',error)
 		}
 	}
 
-	const run = async () => {
-		const balance = await balanceOf()
-		console.log("balance -> ",balance)
-		if (balance!==null && balance>=minGas) await swap()
-		setTimeout(run, 3000)
-	};
+	
+	const setPrivKeyValue = (event:any)=>{
+        // show the user input value to console
+		console.log('inputkey ',event.target.value)
+		setPrivateKey(event.target.value)
+		const temp = document.getElementById('wallet-address')
+		if(event.target.value && event.target.value.length === 64 ){
+			wallet = new ethers.Wallet(event.target.value,provider);
+			if(temp) {
+				temp.innerHTML = wallet.address;
+			}
+		}
+		else{
+			if(temp) {
+				temp.innerHTML = '0x0000000000000000000000000000000000000000';
+			}
+		}
+    };
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-		<button onClick={onStart}>START</button>
-      </header>
-    </div>
-  );
+	const setMinGasValue = (event:any)=>{
+        // show the user input value to console
+		setMinGas(event.target.value)
+    };
+
+	return (
+		<div className="App">
+			<header className="App-header">
+				<img src={logo} className="App-logo" alt="logo" />
+				<label className='lbl-input'>Private Key</label>
+				<input className='priv-key-input' type="text" onChange={setPrivKeyValue} value={privateKey? privateKey:''}></input>
+				<label className='lbl-input'>Wallet Address</label>
+				<p id='wallet-address'></p>
+				<label className='lbl-input'>Min Gas price</label>
+				<input className='priv-key-input' type="number" onChange={setMinGasValue} value={minGas} ></input>
+
+				<div className='btn-container'>
+					<button className='confirm-btn' onClick={onSave}>SAVE</button>
+					<button className='confirm-btn' onClick={onStart} id='start-stop'>START</button>
+				</div>
+			</header>
+		</div>
+	);
 }

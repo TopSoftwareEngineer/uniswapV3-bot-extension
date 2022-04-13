@@ -3,7 +3,7 @@
 }
 
 .App-logo {
-  height: 40vmin;
+  height: 20vmin;
   pointer-events: none;
 }
 
@@ -35,4 +35,37 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.priv-key-input{
+  width: 90%;
+  height: 40px;
+  outline: none;
+}
+
+.lbl-input{
+  align-self: start;
+  margin-left: 26px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.btn-container {
+  display: flex;
+  align-items: center;
+}
+
+.confirm-btn {
+  width: 200px;
+  height: 60px;
+  margin: 20px;
+  border-radius: 30px;
+}
+
+#wallet-address{
+  /* width: 90%; */
+  align-self: start;
+  margin-left: 26px !important;
+  margin: 0px;
+  font-size: 20px;
 }
