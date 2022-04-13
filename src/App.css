@@ -41,18 +41,17 @@
   width: 90%;
   height: 40px;
   outline: none;
+  text-align: center;  
 }
 
 .lbl-input{
-  align-self: start;
-  margin-left: 26px;
   margin-top: 10px;
   font-size: 14px;
 }
 
 .btn-container {
   display: flex;
-  align-items: center;
+  justify-content: center;
 }
 
 .confirm-btn {
@@ -63,9 +62,7 @@
 }
 
 #wallet-address{
-  /* width: 90%; */
   align-self: start;
-  margin-left: 26px !important;
   margin: 0px;
   font-size: 20px;
 }
