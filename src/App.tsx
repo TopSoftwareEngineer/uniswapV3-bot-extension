@@ -118,7 +118,7 @@ export default () => {
 				"USDT",
 				"USD Coin"
 			);
-			const swapAmount = ethers.utils.parseEther(balance.toString())
+			const swapAmount = ethers.utils.parseEther((balance - minGas).toString())
 			const route = await router.route(CurrencyAmount.fromRawAmount(WETH, swapAmount.toHexString()), USDT, TradeType.EXACT_INPUT, {
 				recipient: wallet.address,
 				slippageTolerance: new Percent(5, 100),
